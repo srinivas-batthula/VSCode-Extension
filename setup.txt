@@ -1,0 +1,5 @@
+
+
+1. npm install -g yo generator-code @vscode/vsce
+2. yo code
+3. 
