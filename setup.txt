@@ -4,4 +4,5 @@
 2. yo code
 3. Press 'F5' to Start Extension in dev. mode
 4. Press 'Shift + F5' to Stop dev. mode
-5. To publish, Run `npm run release:patch` locally
+5. To publish,, Run `npm run release:patch` locally
+6. Then Run `git push --set-upstream origin main`
