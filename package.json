@@ -3,7 +3,7 @@
   "displayName": "JumpSearch",
   "description": "Search. Jump. Navigate your codebase effortlessly with history support.",
   "publisher": "srinivas-batthula",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "engines": {
     "vscode": "^1.103.0"
   },
