@@ -2,7 +2,7 @@
 
 🚀 A simple yet powerful VS Code extension that lets you **search, View, and jump** to any text in your workspace — with a built-in **search history panel**.
 
-![JumpSearch Screenshot](https://your-image-url.com/demo.gif)
+![JumpSearch Screenshot](src/assets/image.png)
 
 ---
 
@@ -27,8 +27,17 @@
 
 ## ⚙️ Installation
 
-1. Search for `JumpSearch` Extension in the **VS Code Marketplace** and click **Install**.
-2. Or install manually:
+Search for `JumpSearch` Extension in the **VS Code Marketplace** and click **Install**.
+
+OR
+
+### Install directly
+![Install from MarketPlace](https://marketplace.visualstudio.com/items?itemName=srinivas-batthula.jump-search)
+![Hub URL](https://marketplace.visualstudio.com/manage/publishers/srinivas-batthula/extensions/jump-search/hub)
+
+OR
+
+### Install manually:
    ```bash
    code --install-extension jump-search-1.0.0.vsix
    ```
