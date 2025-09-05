@@ -1,9 +1,21 @@
-# Change Log
+---
 
-All notable changes to the "vscode-extension" extension will be documented in this file.
+### 📄 CHANGELOG.md
+```markdown
+# Changelog
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+All notable changes to **JumpSearch** will be documented here.
 
-## [Unreleased]
+---
 
-- Initial release
+## [1.0.0] - 2025-09-05
+
+### Added
+
+- Initial release of **JumpSearch** 🎉
+- Search across workspace files (with RegExp support).
+- Folder and file extension filters.
+- Inline match previews in QuickPick.
+- Persistent search history (up to 30 entries).
+- Search History Webview Panel.
+- Sample Hello World Panel.

@@ -1,37 +1,66 @@
+// src/commands/searchAndJump.ts
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { addSearchToHistory } from '../utils/history';
+
 
 export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
     const disposable = vscode.commands.registerCommand(
-        'helloWorldExtension.searchAndJump',
-        async () => {
-            // Ask for search term
-            const searchText = await vscode.window.showInputBox({
+        'jumpSearchExtension.searchAndJump',
+        async (providedTerm?: string) => {
+            // 1. Ask for search term
+            const searchText = providedTerm ?? await vscode.window.showInputBox({
                 prompt: 'Enter the text or pattern to search...',
                 ignoreFocusOut: true,
+                value: providedTerm || '', // Pre-fill if provided (when called directly from Search-History)...
             });
             if (!searchText) return;
 
-            // File type filters
+            // 2. Ask user to choose folders
+            const workspaceFolders = vscode.workspace.workspaceFolders;
+            if (!workspaceFolders) {
+                vscode.window.showWarningMessage("No workspace is open!");
+                return;
+            }
+
+            const selectedFolders = await vscode.window.showQuickPick(
+                workspaceFolders.map(f => f.name),
+                {
+                    placeHolder: "Select folders to search in (e.g., src/)",
+                    canPickMany: true,
+                }
+            );
+            if (!selectedFolders || selectedFolders.length === 0) return;
+
+            // 3. Ask for file type
             const fileTypes = ['.*', '.ts', '.js', '.java', '.py', '.cpp', '.c', '.json', '.txt', '.md'];
             const selectedType = await vscode.window.showQuickPick(fileTypes, {
                 placeHolder: 'Select file type to search in (e.g., .java)',
                 canPickMany: false,
             });
-
             if (!selectedType) return;
 
-            // Build glob include pattern
-            const includePattern =
-                selectedType === '*' ? '**/*' : `**/*${selectedType}`;
+            // Save search term to Global State...
+            addSearchToHistory(context, searchText);
 
-            const uris = await vscode.workspace.findFiles(includePattern);
+            // 4. Prepare glob pattern
+            const includePattern = selectedType === '.*' ? '**/*' : `**/*${selectedType}`;
+            const selectedFolderUris = workspaceFolders.filter(f => selectedFolders.includes(f.name));
+
+            const uris: vscode.Uri[] = [];
+            for (const folder of selectedFolderUris) {
+                const folderUris = await vscode.workspace.findFiles(
+                    new vscode.RelativePattern(folder, includePattern)
+                );
+                uris.push(...folderUris);
+            }
 
             if (uris.length === 0) {
-                vscode.window.showInformationMessage(`No files found with extension " ${selectedType} "!`);
+                vscode.window.showWarningMessage(`No files found in selected folders " ${selectedFolders} " with extension " ${selectedType} "`);
                 return;
             }
 
+            // 5. Perform search
             const results: {
                 label: string;
                 description: string;
@@ -53,7 +82,6 @@ export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
                         const end = new vscode.Position(lineNum, match.index + match[0].length);
                         const range = new vscode.Range(start, end);
 
-                        // Highlight match using Markdown-style preview (bold match)
                         const preview = lineText.replace(
                             new RegExp(searchText, 'gi'),
                             (m) => `**${m}**`
@@ -72,16 +100,16 @@ export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
             }
 
             if (results.length === 0) {
-                vscode.window.showInformationMessage(`No matches found for " ${searchText} "!`);
+                vscode.window.showInformationMessage(`No matches found for " ${searchText} "`);
                 return;
             }
 
-            // Show results in QuickPick with Markdown hover preview
+            // 6. Show QuickPick results
             const selected = await vscode.window.showQuickPick(
                 results.map((r) => ({
                     label: r.label,
                     description: r.description,
-                    detail: r.preview, // Markdown-style diff preview
+                    detail: r.preview,
                     uri: r.uri,
                     range: r.range,
                 })),
@@ -91,6 +119,7 @@ export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
                 }
             );
 
+            // 7. Jump to the file/location of the selected item...
             if (selected) {
                 const doc = await vscode.workspace.openTextDocument(selected.uri);
                 const editor = await vscode.window.showTextDocument(doc);
@@ -98,8 +127,6 @@ export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
                 editor.revealRange(selected.range, vscode.TextEditorRevealType.InCenter);
             }
         }
-
-
     );
 
     context.subscriptions.push(disposable);

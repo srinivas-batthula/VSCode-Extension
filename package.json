@@ -1,28 +1,41 @@
 {
-  "name": "vscode-extension",
-  "displayName": "VSCode-Extension",
-  "description": "A simple & starter extension.",
-  "publisher": "srinivasbatthula",
+  "name": "jump-search",
+  "displayName": "JumpSearch",
+  "description": "Search. Jump. Navigate your codebase effortlessly with history support.",
+  "publisher": "srinivas-batthula",
   "version": "1.0.0",
   "engines": {
     "vscode": "^1.103.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Education"
   ],
+  "keywords": [
+    "search",
+    "jump",
+    "navigation",
+    "history",
+    "regex"
+  ],
+  "icon": "assets/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/srinivas-batthula/VSCode-Extension"
+  },
   "contributes": {
     "commands": [
       {
-        "command": "helloWorldExtension.helloWorld",
-        "title": "Hello World Panel : Srini"
+        "command": "jumpSearchExtension.helloWorld",
+        "title": "Intro Starter Panel : JumpSearch"
       },
       {
-        "command": "helloWorldExtension.showInfo",
-        "title": "Show Info Message : Srini"
+        "command": "jumpSearchExtension.searchAndJump",
+        "title": "Search & Navigate to Text in Workspace : JumpSearch"
       },
       {
-        "command": "helloWorldExtension.searchAndJump",
-        "title": "Search & Navigate to Text in Workspace : Srini"
+        "command": "jumpSearchExtension.showSearchHistory",
+        "title": "Show Search History : JumpSearch"
       }
     ]
   },

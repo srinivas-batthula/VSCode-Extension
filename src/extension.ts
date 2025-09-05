@@ -1,13 +1,14 @@
+// src/extension.ts
 import * as vscode from 'vscode';
 import { registerHelloWorld } from './commands/helloWorld';
-import { registerShowInfo } from './commands/showInfo';
 import { registerSearchAndJumpCommand } from './commands/searchAndJump';
+import { registerShowSearchHistory } from './commands/showSearchHistory';
 
 
 export function activate(context: vscode.ExtensionContext) {
     registerHelloWorld(context);
-    registerShowInfo(context);
     registerSearchAndJumpCommand(context);
+    registerShowSearchHistory(context);
 };
 
 export function deactivate() { };

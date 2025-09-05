@@ -1,5 +1,6 @@
-
+--->>> Project Setup Guide : 
 
 1. npm install -g yo generator-code @vscode/vsce
 2. yo code
-3. 
+3. Press 'F5' to Start Extension in dev. mode
+4. Press 'Shift + F5' to Stop dev. mode
