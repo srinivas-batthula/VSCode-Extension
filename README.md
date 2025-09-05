@@ -32,12 +32,18 @@ Search for `JumpSearch` Extension in the **VS Code Marketplace** and click **Ins
 OR
 
 ### Install directly
-![Install from MarketPlace](https://marketplace.visualstudio.com/items?itemName=srinivas-batthula.jump-search)
-![Hub URL](https://marketplace.visualstudio.com/manage/publishers/srinivas-batthula/extensions/jump-search/hub)
+[Install from MarketPlace](https://marketplace.visualstudio.com/items?itemName=srinivas-batthula.jump-search)
+[Hub URL](https://marketplace.visualstudio.com/manage/publishers/srinivas-batthula/extensions/jump-search/hub)
 
 OR
 
-### Install manually:
+### Install manually
    ```bash
    code --install-extension jump-search-1.0.0.vsix
    ```
+---
+
+## Usage Instructions
+1. In VSCode, Open Command-Palette (Ctrl + Shift + P)
+2. Enter commands like `Search & Navigate to Text in Workspace`...
+3. To view all commands, Enter `JumpSearch`...
