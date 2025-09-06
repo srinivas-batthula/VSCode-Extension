@@ -5,11 +5,11 @@ import { addSearchToHistory } from '../utils/history';
 
 /**
  * Registers the "Search & Jump" command into VSCode's command-palette.
- * Search optimized for performance using VSCode's file indexing.
+ * Search is optimized for performance using VSCode's built-in file indexing.
  */
 export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
     const disposable = vscode.commands.registerCommand(
-        'jumpSearchExtension.searchAndJump',
+        'jumpSearchExtension.searchAndJump',     // cmd shown in cmd-palette
         async (providedTerm?: string) => {
             // Prompt input to enter Search Term...
             const searchText = providedTerm ?? await vscode.window.showInputBox({
@@ -41,7 +41,7 @@ export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
                     const rel = path.relative(folder.uri.fsPath, path.dirname(fileUri.fsPath)); // Get folder path
                     if (rel && rel.length > 0 && !rel.startsWith('.')) {
                         const fullFolderPath = path.join(folder.name, rel);
-                        folderPaths.add(fullFolderPath);
+                        folderPaths.add(fullFolderPath);    // Add subfolders
                     }
                 }
 
@@ -49,7 +49,7 @@ export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
             }
 
             const folderOptions: string[] = [];
-            for (const f of workspaceFolders) {
+            for (const f of workspaceFolders) {         // collect subfolders at each folder level
                 const folders = await collectAllFolders(f);
                 folderOptions.push(...folders);
             }
@@ -64,7 +64,7 @@ export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
             );
             if (!selectedFolders || selectedFolders.length === 0) return;
 
-            // Step 4: Select file type filter
+            // Prompt user to Select file-type filter
             const fileTypes = [
                 '.*', '.ts', '.tsx', '.js', '.jsx', '.java', '.py', '.cpp', '.c', '.h', '.hpp',
                 '.json', '.yaml', '.yml', '.txt', '.md', '.html', '.css', '.scss', '.go', '.rs',
@@ -75,13 +75,13 @@ export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
             });
             if (!selectedType) return;
 
-            // Step 5: Save search term in persistent history
+            // Save search-term in persistent history (globalState)
             addSearchToHistory(context, searchText);
 
-            // Step 6: Build glob pattern for files
+            // Build glob pattern for files...
             const includePattern = selectedType === '.*' ? '**/*' : `**/*${selectedType}`;
 
-            // Step 7: Map selected folder names to actual URIs
+            // Map selected folder names to actual URIs...
             const selectedUris = selectedFolders.map(sel => {
                 const matchRoot = workspaceFolders.find(wf => sel === wf.name || sel.startsWith(wf.name + path.sep));
                 if (matchRoot) {
@@ -108,7 +108,7 @@ export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
                 return;
             }
 
-            // Step 8: Search inside files asynchronously with progress bar
+            // Search inside files line-by-line asynchronously with progress bar...
             const MAX_RESULTS_FETCH = 600, MAX_RESULTS_DISPLAY = 100;
             const results = await vscode.window.withProgress(
                 {
@@ -128,6 +128,7 @@ export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
 
                     const regex = new RegExp(searchText, 'gi');
 
+                    // Traversing through each file...
                     for (let i = 0; i < uris.length; i++) {
                         if (token.isCancellationRequested || matches.length >= MAX_RESULTS_FETCH) break;
 
@@ -137,8 +138,8 @@ export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
                             increment: (i / uris.length) * 100,
                         });
 
-                        const doc = await vscode.workspace.openTextDocument(uri);
-                        for (let lineNum = 0; lineNum < doc.lineCount; lineNum++) {
+                        const doc = await vscode.workspace.openTextDocument(uri);   // Open file...
+                        for (let lineNum = 0; lineNum < doc.lineCount; lineNum++) {     // Traverse through each line's in all files...
                             const lineText = doc.lineAt(lineNum).text;
                             let match: RegExpExecArray | null;
                             while ((match = regex.exec(lineText)) !== null) {
@@ -168,7 +169,7 @@ export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
                 return;
             }
 
-            // Step 9: Show results in QuickPick
+            // Show results in QuickPick (command-palette)
             const selected = await vscode.window.showQuickPick(
                 results.map((r) => ({
                     label: r.label,
@@ -183,7 +184,7 @@ export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
                 }
             );
 
-            // Step 10: Jump to selected match in editor
+            // Jump to selected match in editor, onClick on any item displayed in the QuickPick view...
             if (selected) {
                 const doc = await vscode.workspace.openTextDocument(selected.uri);
                 const editor = await vscode.window.showTextDocument(doc);
@@ -193,5 +194,5 @@ export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
         }
     );
 
-    context.subscriptions.push(disposable);
+    context.subscriptions.push(disposable);     // Auto Clean-Up when the Extension is De-Activated...
 }

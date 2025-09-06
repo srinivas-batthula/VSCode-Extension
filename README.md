@@ -54,6 +54,12 @@ code --install-extension jump-search-1.0.0.vsix
 
 ---
 
+## To Publish Newer Version 
+- See details at [setup.txt](/setup.txt)
+```
+   Run :->  npm run release:patch
+```
+
 ## 🔁 Workflow (End-to-End)
 
 1. User presses Ctrl+Shift+P → Search & Navigate to Text.
