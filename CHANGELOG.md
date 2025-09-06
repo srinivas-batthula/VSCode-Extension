@@ -19,3 +19,15 @@ All notable changes to **JumpSearch** will be documented here.
 - Persistent search history (up to 30 entries).
 - Search History Webview Panel.
 - Sample Hello World Panel.
+
+---
+
+
+## [1.4.1] - 2025-09-06
+
+### Added
+
+- Optimized Search functionality
+
+---
+

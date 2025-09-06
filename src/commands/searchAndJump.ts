@@ -4,40 +4,72 @@ import * as path from 'path';
 import { addSearchToHistory } from '../utils/history';
 
 /**
- * Registers the "Search & Jump" command
- * Optimized for performance using VSCode's built-in file indexing
+ * Registers the "Search & Jump" command into VSCode's command-palette.
+ * Search optimized for performance using VSCode's file indexing.
  */
 export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
     const disposable = vscode.commands.registerCommand(
         'jumpSearchExtension.searchAndJump',
         async (providedTerm?: string) => {
-            // Step 1: Prompt for search term
+            // Prompt input to enter Search Term...
             const searchText = providedTerm ?? await vscode.window.showInputBox({
                 prompt: 'Enter the text or pattern to search...',
                 ignoreFocusOut: true,
-                value: providedTerm || '',  // Pre-fill if provided (when called directly from Search-History)...
+                value: providedTerm || '',  // Pre-fill if provided (`providedTerm` is provided when called directly from Search-History)...
             });
             if (!searchText) return;
 
-            // Step 2: Ensure a workspace is open
+            // Ensure a workspace is open...
             const workspaceFolders = vscode.workspace.workspaceFolders;
             if (!workspaceFolders) {
                 vscode.window.showWarningMessage("No workspace is open!");
                 return;
             }
 
-            // Step 3: Select folders (allows searching in only specific folders)
+            // --- Dynamically collect folder & subfolder paths only (excluding files) ---
+            async function collectAllFolders(folder: vscode.WorkspaceFolder): Promise<string[]> {
+                const files = await vscode.workspace.findFiles(
+                    new vscode.RelativePattern(folder, '**/*'),
+                    '{**/node_modules/**,**/.git/**,**/dist/**,**/out/**,**/.next/**,**/.vercel/**,**/.turbo/**,**/coverage/**,**/.angular/**,**/.nx/**,**/build/**,**/bower_components/**,**/tmp/**,**/temp/**,**/.tmp/**,**/.cache/**,**/__pycache__/**,**/.venv/**,**/venv/**,**/.idea/**,**/.vscode/**,**/.DS_Store}',
+                    500
+                );
+
+                const folderPaths = new Set<string>();
+                folderPaths.add(folder.name); // Add root folder
+
+                for (const fileUri of files) {
+                    const rel = path.relative(folder.uri.fsPath, path.dirname(fileUri.fsPath)); // Get folder path
+                    if (rel && rel.length > 0 && !rel.startsWith('.')) {
+                        const fullFolderPath = path.join(folder.name, rel);
+                        folderPaths.add(fullFolderPath);
+                    }
+                }
+
+                return Array.from(folderPaths).sort();
+            }
+
+            const folderOptions: string[] = [];
+            for (const f of workspaceFolders) {
+                const folders = await collectAllFolders(f);
+                folderOptions.push(...folders);
+            }
+
+            // Prompt user to pick from folders/subfolders
             const selectedFolders = await vscode.window.showQuickPick(
-                workspaceFolders.map(f => f.name),
+                folderOptions,
                 {
-                    placeHolder: "Select folders to search in",
+                    placeHolder: "Select folders to search in (root and/or subfolders only)",
                     canPickMany: true,
                 }
             );
             if (!selectedFolders || selectedFolders.length === 0) return;
 
             // Step 4: Select file type filter
-            const fileTypes = ['.*', '.ts', '.js', '.java', '.py', '.cpp', '.c', '.json', '.txt', '.md'];
+            const fileTypes = [
+                '.*', '.ts', '.tsx', '.js', '.jsx', '.java', '.py', '.cpp', '.c', '.h', '.hpp',
+                '.json', '.yaml', '.yml', '.txt', '.md', '.html', '.css', '.scss', '.go', '.rs',
+                '.sh', '.env', '.ini', '.xml'
+            ];
             const selectedType = await vscode.window.showQuickPick(fileTypes, {
                 placeHolder: 'Select file type (.* for all files)',
             });
@@ -48,14 +80,25 @@ export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
 
             // Step 6: Build glob pattern for files
             const includePattern = selectedType === '.*' ? '**/*' : `**/*${selectedType}`;
-            const selectedFolderUris = workspaceFolders.filter(f => selectedFolders.includes(f.name));
 
-            // Step 7: Fetch matching files using VSCode's indexed search
+            // Step 7: Map selected folder names to actual URIs
+            const selectedUris = selectedFolders.map(sel => {
+                const matchRoot = workspaceFolders.find(wf => sel === wf.name || sel.startsWith(wf.name + path.sep));
+                if (matchRoot) {
+                    if (sel === matchRoot.name) {
+                        return matchRoot.uri;
+                    }
+                    const relPath = sel.substring(matchRoot.name.length + 1);
+                    return vscode.Uri.joinPath(matchRoot.uri, relPath);
+                }
+                return undefined;
+            }).filter((u): u is vscode.Uri => !!u);
+
             const uris: vscode.Uri[] = [];
-            for (const folder of selectedFolderUris) {
+            for (const folderUri of selectedUris) {
                 const folderUris = await vscode.workspace.findFiles(
-                    new vscode.RelativePattern(folder, includePattern),
-                    '**/node_modules/**' // Exclude node_modules for speed
+                    new vscode.RelativePattern(folderUri, includePattern),
+                    '{**/node_modules/**,**/.git/**,**/dist/**,**/out/**,**/.next/**,**/.vercel/**,**/.turbo/**,**/coverage/**,**/.angular/**,**/.nx/**,**/build/**,**/bower_components/**,**/tmp/**,**/temp/**,**/.tmp/**,**/.cache/**,**/__pycache__/**,**/.venv/**,**/venv/**,**/.idea/**,**/.vscode/**,**/.DS_Store}'
                 );
                 uris.push(...folderUris);
             }
@@ -66,6 +109,7 @@ export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
             }
 
             // Step 8: Search inside files asynchronously with progress bar
+            const MAX_RESULTS_FETCH = 600, MAX_RESULTS_DISPLAY = 100;
             const results = await vscode.window.withProgress(
                 {
                     location: vscode.ProgressLocation.Notification,
@@ -85,7 +129,7 @@ export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
                     const regex = new RegExp(searchText, 'gi');
 
                     for (let i = 0; i < uris.length; i++) {
-                        if (token.isCancellationRequested) break;
+                        if (token.isCancellationRequested || matches.length >= MAX_RESULTS_FETCH) break;
 
                         const uri = uris[i];
                         progress.report({
@@ -94,12 +138,9 @@ export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
                         });
 
                         const doc = await vscode.workspace.openTextDocument(uri);
-                        const text = doc.getText();
-                        let match: RegExpExecArray | null;
-
-                        // Search line by line to get exact positions
                         for (let lineNum = 0; lineNum < doc.lineCount; lineNum++) {
                             const lineText = doc.lineAt(lineNum).text;
+                            let match: RegExpExecArray | null;
                             while ((match = regex.exec(lineText)) !== null) {
                                 const start = new vscode.Position(lineNum, match.index);
                                 const end = new vscode.Position(lineNum, match.index + match[0].length);
@@ -113,10 +154,12 @@ export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
                                     range,
                                     preview: lineText.replace(new RegExp(searchText, 'gi'), (m) => `**${m}**`),
                                 });
+                                if (matches.length >= MAX_RESULTS_FETCH) break;
                             }
+                            if (matches.length >= MAX_RESULTS_FETCH) break;
                         }
                     }
-                    return matches;
+                    return matches.slice(0, MAX_RESULTS_DISPLAY);
                 }
             );
 
@@ -135,7 +178,7 @@ export function registerSearchAndJumpCommand(context: vscode.ExtensionContext) {
                     range: r.range,
                 })),
                 {
-                    placeHolder: `Found ${results.length} matches for "${searchText}"`,
+                    placeHolder: `Found '${results.length}' matches for "${searchText}"  (Results are Only Shown upto ${MAX_RESULTS_DISPLAY})`,
                     matchOnDetail: true,
                 }
             );
