@@ -2,7 +2,8 @@
 
 1. npm install -g yo generator-code @vscode/vsce
 2. yo code
-3. Press 'F5' to Start Extension in dev. mode
-4. Press 'Shift + F5' to Stop dev. mode
+3. npm run compile
+4. Press 'F5' to Start Extension in dev. mode
+5. Press 'Shift + F5' to Stop dev. mode
 
-5. (Only) To publish the extension via CI/CD,, Run `npm run release:patch` locally
+6. (Only) To publish the extension via CI/CD,, Run `npm run release:patch` locally
