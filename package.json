@@ -23,6 +23,11 @@
     "type": "git",
     "url": "https://github.com/srinivas-batthula/VSCode-Extension"
   },
+  "activationEvents": [
+    "onCommand:jumpSearchExtension.helloWorld",
+    "onCommand:jumpSearchExtension.searchAndJump",
+    "onCommand:jumpSearchExtension.showSearchHistory"
+  ],
   "contributes": {
     "commands": [
       {
